@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { users } from "../db/schema";
+import { users, sessions } from "../db/schema";
 
 export type RegisterUserInput = {
   name: string;
@@ -27,4 +27,29 @@ export async function registerUser(input: RegisterUserInput) {
   });
 
   return { data: "OK" };
+}
+
+export type LoginUserInput = {
+  email: string;
+  password: string;
+};
+
+export async function loginUser(input: LoginUserInput) {
+  const user = await db.query.users.findFirst({
+    where: (users, { eq }) => eq(users.email, input.email),
+  });
+
+  if (!user) {
+    throw new Error("Email atau password salah");
+  }
+
+  const valid = await Bun.password.verify(input.password, user.password);
+  if (!valid) {
+    throw new Error("Email atau password salah");
+  }
+
+  const token = crypto.randomUUID();
+  await db.insert(sessions).values({ token, userId: user.id });
+
+  return { data: token };
 }

@@ -1,6 +1,5 @@
 import { db } from "../db";
 import { users } from "../db/schema";
-import { eq } from "drizzle-orm";
 
 export type RegisterUserInput = {
   name: string;
@@ -9,13 +8,11 @@ export type RegisterUserInput = {
 };
 
 export async function registerUser(input: RegisterUserInput) {
-  const existing = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, input.email))
-    .limit(1);
+  const existing = await db.query.users.findFirst({
+    where: (users, { eq }) => eq(users.email, input.email),
+  });
 
-  if (existing.length > 0) {
+  if (existing) {
     throw new Error("Email sudah terdaftar");
   }
 
